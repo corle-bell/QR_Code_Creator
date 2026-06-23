@@ -28,12 +28,21 @@ git push -u origin main
 
 ## 步骤 2：启用 GitHub Pages
 
-1. 打开 https://github.com/corle-bell/QR_Code_Creator/settings/pages
-2. **Build and deployment** → Source 选择 **Deploy from a branch**
-3. **Branch** 选择 `main`，文件夹选择 **`/ (root)`**
-4. 点击 **Save**
+打开 https://github.com/corle-bell/QR_Code_Creator/settings/pages
 
-等待 1–2 分钟，站点地址为：
+**推荐方式：GitHub Actions（本项目已包含工作流）**
+
+1. **Build and deployment** → Source 选择 **GitHub Actions**
+2. 推送代码后，打开 **Actions** 标签，确认 `Deploy GitHub Pages` 工作流运行成功（绿色 ✓）
+3. 首次部署可能需要 2–10 分钟
+
+**备选方式：Deploy from a branch**
+
+1. Source 选择 **Deploy from a branch**
+2. Branch 选 **`main`**，文件夹选 **`/ (root)`**（不是 `/docs`）
+3. 根目录需有 `.nojekyll` 文件（已包含）
+
+> 若访问 404，最常见原因：Source 选成了 `/docs`、分支选成了 `master`、或 Actions 工作流未运行成功。
 
 ```
 https://corle-bell.github.io/QR_Code_Creator/
@@ -41,7 +50,17 @@ https://corle-bell.github.io/QR_Code_Creator/
 
 ---
 
-## 步骤 3：确认隐私政策可访问
+## 404 排查
+
+| 检查项 | 正确设置 |
+|--------|----------|
+| Pages Source | **GitHub Actions** 或 Branch = `main` + `/ (root)` |
+| 分支名 | 必须是 `main`（不是 `master`） |
+| Actions 状态 | https://github.com/corle-bell/QR_Code_Creator/actions 显示绿色成功 |
+| 等待时间 | 首次部署有时需 10 分钟 |
+| 测试 URL | 先访问根路径 https://corle-bell.github.io/QR_Code_Creator/ |
+
+若仍 404，到 Settings → Pages 确认顶部是否显示 **"Your site is live at ..."**。
 
 浏览器打开：
 
