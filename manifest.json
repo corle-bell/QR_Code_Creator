@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "二维码生成器",
+  "short_name": "二维码",
+  "version": "1.0.0",
+  "description": "右键或点击图标快速生成二维码，支持页面链接、选中文字、图片地址，纯本地生成，保护隐私。",
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "生成当前页面二维码",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "homepage_url": "https://corle-bell.github.io/QR_Code_Creator/"
+}

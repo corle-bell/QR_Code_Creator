@@ -1,0 +1,208 @@
+/* 二维码扩展 - 模态框样式 */
+
+/* 遮罩层 */
+.qrcode-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.qrcode-modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 模态框内容 */
+.qrcode-modal-content {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 360px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.9);
+  transition: transform 0.2s ease;
+}
+
+.qrcode-modal-overlay.show .qrcode-modal-content {
+  transform: scale(1);
+}
+
+/* 头部 */
+.qrcode-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.qrcode-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.qrcode-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.qrcode-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* 主体 */
+.qrcode-modal-body {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 二维码图片容器 */
+.qrcode-image-container {
+  width: 256px;
+  height: 256px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 8px;
+  border: 2px solid #e8e8e8;
+  padding: 8px;
+}
+
+.qrcode-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qrcode-loading {
+  color: #999;
+  font-size: 14px;
+}
+
+.qrcode-error {
+  color: #ff4d4f;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* 内容信息 */
+.qrcode-content-info {
+  width: 100%;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.qrcode-content-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.qrcode-content-text {
+  font-size: 13px;
+  color: #333;
+  word-break: break-all;
+  line-height: 1.5;
+  max-height: 60px;
+  overflow-y: auto;
+}
+
+/* 底部按钮 */
+.qrcode-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.qrcode-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.qrcode-btn:active {
+  transform: scale(0.98);
+}
+
+.qrcode-btn-copy {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.qrcode-btn-copy:hover {
+  background-color: #e0e0e0;
+}
+
+.qrcode-btn-download {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+}
+
+.qrcode-btn-download:hover {
+  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+}
+
+/* Toast 提示 */
+.qrcode-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 2147483647;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+
+.qrcode-toast.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
