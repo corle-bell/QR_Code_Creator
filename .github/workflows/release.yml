@@ -15,10 +15,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Package extension
-        shell: pwsh
-        run: ./store/package.ps1
+        with:
+          fetch-depth: 0
 
       - name: Read version from manifest
         id: version
@@ -27,9 +25,39 @@ jobs:
           $v = (Get-Content manifest.json -Raw | ConvertFrom-Json).version
           "version=$v" >> $env:GITHUB_OUTPUT
 
+      - name: Validate tag matches manifest
+        if: github.event_name == 'push'
+        shell: pwsh
+        run: |
+          $expected = "v${{ steps.version.outputs.version }}"
+          if ("${{ github.ref_name }}" -ne $expected) {
+            throw "Tag ${{ github.ref_name }} does not match manifest version $expected"
+          }
+
+      - name: Create release tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          $tag = "v${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --tags
+          $existing = git tag -l $tag
+          if ($existing) {
+            Write-Host "Tag $tag already exists, skipping creation"
+          } else {
+            git tag -a $tag -m "Release $tag" ${{ github.sha }}
+            git push origin $tag
+          }
+
+      - name: Package extension
+        shell: pwsh
+        run: ./store/package.ps1
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
+          tag_name: v${{ steps.version.outputs.version }}
           files: dist/qrcode-extension-v${{ steps.version.outputs.version }}.zip
           generate_release_notes: true
         env:
