@@ -20,6 +20,9 @@ $includeFiles = @(
     "background.js",
     "content.js",
     "qrcode.min.js",
+    "qr-ui.js",
+    "popup.html",
+    "popup.js",
     "modal.css"
 )
 

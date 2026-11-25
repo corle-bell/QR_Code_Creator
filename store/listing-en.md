@@ -26,7 +26,9 @@ QR Code Generator is a lightweight browser extension that turns web content into
 KEY FEATURES
 
 • Context menu — Right-click on a page, selected text, a link, or an image to generate a QR code instantly
-• Toolbar button — Click the extension icon to create a QR code for the current page URL
+• Toolbar button — Click the extension icon to open the generator; it works even when the tab has no URL
+• Editable content — Type or paste any text (not just URLs) and the QR code updates instantly
+• Address bar keyword — Type "qr" plus any text in the omnibox to generate a QR code
 • Modal preview — View the QR code in a clean overlay with copy and download actions
 • Download PNG — Save the QR code as an image file
 • Copy content — Copy the encoded text to your clipboard with one click

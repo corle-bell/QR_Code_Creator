@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="qrcode-popup-page">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>二维码生成器</title>
+  <link rel="stylesheet" href="modal.css">
+</head>
+<body>
+  <div class="qrcode-modal-content">
+    <div class="qrcode-modal-header">
+      <h3 class="qrcode-modal-title">二维码生成器</h3>
+      <button class="qrcode-close-btn" type="button" title="关闭" aria-label="关闭">&times;</button>
+    </div>
+    <div class="qrcode-modal-body">
+      <div class="qrcode-image-container">
+        <div class="qrcode-loading">生成中...</div>
+      </div>
+      <div class="qrcode-content-info">
+        <label class="qrcode-content-label" for="qrcode-content-input">内容:</label>
+        <textarea
+          id="qrcode-content-input"
+          class="qrcode-content-input"
+          rows="4"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="输入或粘贴任意文字、链接，即可生成二维码"
+          aria-label="二维码内容"
+        ></textarea>
+        <div class="qrcode-content-meta">
+          <span class="qrcode-char-count"></span>
+          <button class="qrcode-btn qrcode-btn-generate" type="button">生成二维码</button>
+        </div>
+      </div>
+    </div>
+    <div class="qrcode-modal-footer">
+      <button class="qrcode-btn qrcode-btn-copy" type="button">复制内容</button>
+      <button class="qrcode-btn qrcode-btn-download" type="button">下载二维码</button>
+    </div>
+  </div>
+  <script src="qrcode.min.js"></script>
+  <script src="qr-ui.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

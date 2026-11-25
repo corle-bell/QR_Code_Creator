@@ -1,9 +1,12 @@
 // background.js - 服务工作线程
 
-const CONTENT_FILES = ["qrcode.min.js", "content.js"];
+const CONTENT_FILES = ["qrcode.min.js", "qr-ui.js", "content.js"];
 const STYLE_FILES = ["modal.css"];
+const GENERATOR_WINDOW = { width: 420, height: 700 };
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
+  await chrome.contextMenus.removeAll();
+
   chrome.contextMenus.create({
     id: "qrcode-page",
     title: "生成当前页面二维码",
@@ -27,21 +30,15 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "生成此图片地址二维码",
     contexts: ["image"]
   });
+
+  chrome.omnibox.setDefaultSuggestion({
+    description: "输入或粘贴任意内容，回车即可生成二维码（不必是网址）"
+  });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  const payload = getPayloadFromMenu(info, tab);
-  if (!payload) {
-    return;
-  }
-  showQRCodeInTab(tab.id, payload.content, payload.label);
-});
-
-chrome.action.onClicked.addListener((tab) => {
-  if (!tab.id || !tab.url) {
-    return;
-  }
-  showQRCodeInTab(tab.id, tab.url, "当前页面");
+  const payload = getPayloadFromMenu(info, tab || {});
+  showQRCode(tab, payload.content, payload.label);
 });
 
 function getPayloadFromMenu(info, tab) {
@@ -50,7 +47,7 @@ function getPayloadFromMenu(info, tab) {
 
   switch (info.menuItemId) {
     case "qrcode-page":
-      content = info.pageUrl || tab.url;
+      content = info.pageUrl || tab.url || "";
       label = "当前页面";
       break;
     case "qrcode-selection":
@@ -66,14 +63,50 @@ function getPayloadFromMenu(info, tab) {
       label = "图片地址";
       break;
     default:
-      return null;
-  }
-
-  if (!content) {
-    return null;
+      content = "";
+      label = "自定义内容";
   }
 
   return { content, label };
+}
+
+function isRestrictedUrl(url) {
+  if (!url) return true;
+  try {
+    const parsed = new URL(url);
+    const protocol = parsed.protocol.toLowerCase();
+    const restricted = new Set([
+      "chrome:",
+      "chrome-extension:",
+      "chrome-search:",
+      "chrome-untrusted:",
+      "edge:",
+      "about:",
+      "devtools:",
+      "view-source:",
+      "brave:",
+      "opera:",
+      "vivaldi:",
+      "moz-extension:"
+    ]);
+    if (restricted.has(protocol)) return true;
+    const host = (parsed.hostname || "").toLowerCase();
+    if (host === "chromewebstore.google.com") return true;
+    if (host === "chrome.google.com" && parsed.pathname.startsWith("/webstore")) return true;
+    return false;
+  } catch (err) {
+    return true;
+  }
+}
+
+async function showQRCode(tab, content, label) {
+  const tabId = tab && tab.id;
+  const tabUrl = tab && (tab.url || tab.pendingUrl);
+  if (tabId && tabId > 0 && !isRestrictedUrl(tabUrl)) {
+    const ok = await showQRCodeInTab(tabId, content || "", label || "内容");
+    if (ok) return;
+  }
+  await openGeneratorWindow(content || "", label || "自定义内容");
 }
 
 async function showQRCodeInTab(tabId, content, label) {
@@ -85,7 +118,7 @@ async function showQRCodeInTab(tabId, content, label) {
 
   try {
     await chrome.tabs.sendMessage(tabId, message);
-    return;
+    return true;
   } catch (err) {
     // 内容脚本尚未注入，按需注入后再发送
   }
@@ -100,7 +133,60 @@ async function showQRCodeInTab(tabId, content, label) {
       files: STYLE_FILES
     });
     await chrome.tabs.sendMessage(tabId, message);
+    return true;
   } catch (err) {
     console.error("无法在此页面生成二维码:", err);
+    return false;
   }
 }
+
+async function openGeneratorWindow(content, label) {
+  await chrome.storage.session.set({
+    qrDraft: {
+      content: content || "",
+      label: label || "自定义内容",
+      ts: Date.now()
+    }
+  });
+
+  await chrome.windows.create({
+    url: chrome.runtime.getURL("popup.html?source=window"),
+    type: "popup",
+    width: GENERATOR_WINDOW.width,
+    height: GENERATOR_WINDOW.height,
+    focused: true
+  });
+}
+
+function describeOmniboxText(text) {
+  const trimmed = (text || "").trim();
+  if (!trimmed) {
+    return "打开二维码生成器，可输入或粘贴任意内容";
+  }
+  const preview = trimmed.length > 40 ? trimmed.slice(0, 40) + "…" : trimmed;
+  return "生成二维码：" + preview;
+}
+
+chrome.omnibox.onInputStarted.addListener(() => {
+  chrome.omnibox.setDefaultSuggestion({
+    description: "输入或粘贴任意内容，回车即可生成二维码（不必是网址）"
+  });
+});
+
+chrome.omnibox.onInputChanged.addListener((text, suggest) => {
+  chrome.omnibox.setDefaultSuggestion({
+    description: describeOmniboxText(text)
+  });
+  if (text) {
+    suggest([
+      {
+        content: text,
+        description: describeOmniboxText(text)
+      }
+    ]);
+  }
+});
+
+chrome.omnibox.onInputEntered.addListener((text) => {
+  openGeneratorWindow(text || "", "地址栏内容");
+});

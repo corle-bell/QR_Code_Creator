@@ -10,6 +10,7 @@
 
   var MODAL_ID = 'qrcode-extension-modal';
   var modalElement = null;
+  var generator = null;
 
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.action === 'showQRCode') {
@@ -21,43 +22,36 @@
 
   function showModal(content, label) {
     if (modalElement) {
-      removeModal();
+      removeModal(true);
     }
 
     modalElement = document.createElement('div');
     modalElement.id = MODAL_ID;
     modalElement.className = 'qrcode-modal-overlay';
-    modalElement.innerHTML = createModalHTML(content, label);
+    modalElement.innerHTML = createModalHTML(label);
     document.body.appendChild(modalElement);
 
-    var qrContainer = modalElement.querySelector('.qrcode-image-container');
-    if (qrContainer && typeof generateQRCode === 'function') {
-      try {
-        var qrDataUrl = generateQRCode(content, 256);
-        var img = document.createElement('img');
-        img.src = qrDataUrl;
-        img.alt = '二维码';
-        img.className = 'qrcode-image';
-        qrContainer.innerHTML = '';
-        qrContainer.appendChild(img);
-      } catch (e) {
-        qrContainer.innerHTML = '<p class="qrcode-error">二维码生成失败: ' + escapeHtml(e.message) + '</p>';
-      }
-    }
+    generator = window.QRCodeUI.bindGenerator(modalElement, {
+      initialContent: content || '',
+      size: 256,
+      toastHost: document.body
+    });
 
     bindEvents();
 
     setTimeout(function() {
-      modalElement.classList.add('show');
+      if (modalElement) {
+        modalElement.classList.add('show');
+        generator.focus();
+      }
     }, 10);
   }
 
-  function createModalHTML(content, label) {
-    var displayContent = content.length > 100 ? content.substring(0, 100) + '...' : content;
+  function createModalHTML(label) {
     return '\
       <div class="qrcode-modal-content">\
         <div class="qrcode-modal-header">\
-          <h3 class="qrcode-modal-title">二维码 - ' + escapeHtml(label || '内容') + '</h3>\
+          <h3 class="qrcode-modal-title">二维码 - ' + window.QRCodeUI.escapeHtml(label || '内容') + '</h3>\
           <button class="qrcode-close-btn" type="button" title="关闭" aria-label="关闭">&times;</button>\
         </div>\
         <div class="qrcode-modal-body">\
@@ -65,8 +59,20 @@
             <div class="qrcode-loading">生成中...</div>\
           </div>\
           <div class="qrcode-content-info">\
-            <div class="qrcode-content-label">内容:</div>\
-            <div class="qrcode-content-text" title="' + escapeHtml(content) + '">' + escapeHtml(displayContent) + '</div>\
+            <label class="qrcode-content-label" for="qrcode-extension-content-input">内容:</label>\
+            <textarea \
+              id="qrcode-extension-content-input" \
+              class="qrcode-content-input" \
+              rows="4" \
+              spellcheck="false" \
+              autocomplete="off" \
+              placeholder="输入或粘贴任意文字、链接，即可生成二维码" \
+              aria-label="二维码内容"\
+            ></textarea>\
+            <div class="qrcode-content-meta">\
+              <span class="qrcode-char-count"></span>\
+              <button class="qrcode-btn qrcode-btn-generate" type="button">生成二维码</button>\
+            </div>\
           </div>\
         </div>\
         <div class="qrcode-modal-footer">\
@@ -82,123 +88,50 @@
 
     var closeBtn = modalElement.querySelector('.qrcode-close-btn');
     if (closeBtn) {
-      closeBtn.addEventListener('click', removeModal);
+      closeBtn.addEventListener('click', function() {
+        removeModal(false);
+      });
     }
 
     modalElement.addEventListener('click', function(e) {
       if (e.target === modalElement) {
-        removeModal();
+        removeModal(false);
       }
     });
 
     document.addEventListener('keydown', handleKeydown);
-
-    var copyBtn = modalElement.querySelector('.qrcode-btn-copy');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', function() {
-        copyToClipboard(getCurrentContent()).then(function() {
-          showToast('已复制到剪贴板');
-        }).catch(function() {
-          showToast('复制失败，请手动复制');
-        });
-      });
-    }
-
-    var downloadBtn = modalElement.querySelector('.qrcode-btn-download');
-    if (downloadBtn) {
-      downloadBtn.addEventListener('click', downloadQRCode);
-    }
   }
 
   function handleKeydown(e) {
     if (e.key === 'Escape') {
-      removeModal();
+      removeModal(false);
     }
   }
 
-  function removeModal() {
-    if (modalElement) {
-      modalElement.classList.remove('show');
-      setTimeout(function() {
-        if (modalElement && modalElement.parentNode) {
-          modalElement.parentNode.removeChild(modalElement);
-        }
-        modalElement = null;
-      }, 200);
-    }
+  function removeModal(immediate) {
     document.removeEventListener('keydown', handleKeydown);
-  }
-
-  function getCurrentContent() {
-    if (!modalElement) return '';
-    var contentText = modalElement.querySelector('.qrcode-content-text');
-    return contentText ? contentText.getAttribute('title') || contentText.textContent : '';
-  }
-
-  function copyToClipboard(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text);
+    if (!modalElement) {
+      generator = null;
+      return;
     }
 
-    return new Promise(function(resolve, reject) {
-      var textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        var ok = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        if (ok) {
-          resolve();
-        } else {
-          reject(new Error('copy failed'));
-        }
-      } catch (e) {
-        document.body.removeChild(textarea);
-        reject(e);
+    var el = modalElement;
+    modalElement = null;
+    generator = null;
+
+    if (immediate) {
+      if (el.parentNode) {
+        el.parentNode.removeChild(el);
       }
-    });
-  }
+      return;
+    }
 
-  function downloadQRCode() {
-    if (!modalElement) return;
-    var img = modalElement.querySelector('.qrcode-image');
-    if (!img) return;
-
-    var link = document.createElement('a');
-    link.download = 'qrcode.png';
-    link.href = img.src;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  function showToast(message) {
-    var toast = document.createElement('div');
-    toast.className = 'qrcode-toast';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
+    el.classList.remove('show');
     setTimeout(function() {
-      toast.classList.add('show');
-    }, 10);
-
-    setTimeout(function() {
-      toast.classList.remove('show');
-      setTimeout(function() {
-        if (toast.parentNode) {
-          toast.parentNode.removeChild(toast);
-        }
-      }, 300);
-    }, 1500);
-  }
-
-  function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode(text));
-    return div.innerHTML;
+      if (el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    }, 200);
   }
 
 })();
